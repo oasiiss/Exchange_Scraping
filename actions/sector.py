@@ -79,12 +79,10 @@ def GetSectorDetail(sektor_slug, token):
                     if len(columns) > 0:
                         title = columns[0].text.strip()
 
-                        # BIST 100 satırını al
                         if title == "BIST 100":
                             bist_100_fk = columns[1].text.strip() if len(columns) > 1 else None
                             bist_100_pddd = columns[2].text.strip() if len(columns) > 2 else None
 
-                        # Medyan satırını al
                         if title == "Medyan":
                             medyan_fk = columns[1].text.strip() if len(columns) > 1 else None
                             medyan_pddd = columns[2].text.strip() if len(columns) > 2 else None

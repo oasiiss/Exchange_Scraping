@@ -2,7 +2,15 @@ import sqlite3
 from actions.auth import Login
 from actions.sector import GetSectors, GetSectorDetail
 from actions.read_config import ReadConfig
-import sys, time
+import sys, time, os, platform
+from tqdm import tqdm
+
+
+def clear_screen():
+    if platform.system() == "Windows":
+        os.system('cls')
+    else:
+        os.system('clear')
 
 def setup_database():
     conn = sqlite3.connect('data.db')
@@ -58,7 +66,7 @@ def main():
     result = ReadConfig()
     if not result[0]:
         print("Config Okunamadı ...")
-        time.sleep(5)
+        time.sleep(2)
         sys.exit(0)
     config = result[1]
 
@@ -67,7 +75,7 @@ def main():
     result = Login(config["username"], config["password"])
     if not result[0]:
         print("Giriş Yapılamadı ...")
-        time.sleep(5)
+        time.sleep(2)
         sys.exit(0)
     login_data = result[1]
 
@@ -75,12 +83,13 @@ def main():
 
     while True:
         while True:
-            choice = input("1 - Sektörleri Çek\n2 - Hisseleri Çek\n3 - Programı Sonlandır\nSeçimin : ")
+            clear_screen()
+            choice = input("\n1 - Sektörleri Çek\n2 - Hisseleri Çek\n3 - Programı Sonlandır\n\nSeçimin : ")
             if choice.isnumeric():
                 choice = int(choice)
                 if choice == 3:
                     print("Program Kaptılıyor...")
-                    time.sleep(2)
+                    time.sleep(1)
                     sys.exit(0)
                 elif choice == 1:
                     status = 1
@@ -97,47 +106,47 @@ def main():
                 time.sleep(0.5)
                 continue
         
-        print(f"Seçiminiz : {status}")
+        if status == 1:
+            result = GetSectors(login_data["access"])
+            if not result[0]:
+                print("Sektörlerin Bilgisi Çekilemedi Tekrar Deneyiniz..")
+                continue
 
-        
-    result = GetSectors(login_data["access"])
-    if not result[0]:
-        print(result[1])
-        sys.exit(0)
-    all_sectors = result[1]
+            all_sectors = result[1]
 
-    clear_table("2024_sektorler")
+            print(f"\n{len(all_sectors)} Adet Sektör Bulundu.\n")
 
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
+            clear_table("2024_sektorler")
 
-    for sector in all_sectors:
-        result = GetSectorDetail(sector["url"], login_data["access"])
-        if result[0]:
-            sector_detail = result[1]
-            print(sector["title"])
-            print(sector_detail)
+            conn = sqlite3.connect('data.db')
+            cursor = conn.cursor()
 
-            cursor.execute("""
-            INSERT INTO '2024_sektorler' (SEKTOR_ADI, SEKTOR_FK, SEKTOR_PD_DD, SEKTOR_FD_FAVOK, BIST_FK, BIST_PD_DD) 
-            VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                sector["title"],
-                sector_detail.get("medyan_fk", None),
-                sector_detail.get("medyan_pddd", None),
-                sector_detail.get("medyan_fd_favok", None),
-                sector_detail.get("bist_fk", None),
-                sector_detail.get("bist_pddd", None)
-            ))
+            for sector in tqdm(all_sectors, desc="Sektörler çekiliyor", unit="sektör"):
+                result = GetSectorDetail(sector["url"], login_data["access"])
+                if result[0]:
+                    sector_detail = result[1]
+                    cursor.execute("""
+                    INSERT INTO '2024_sektorler' (SEKTOR_ADI, SEKTOR_FK, SEKTOR_PD_DD, SEKTOR_FD_FAVOK, BIST_FK, BIST_PD_DD) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """, (
+                        sector["title"],
+                        sector_detail.get("medyan_fk", None),
+                        sector_detail.get("medyan_pddd", None),
+                        sector_detail.get("medyan_fd_favok", None),
+                        sector_detail.get("bist_fk", None),
+                        sector_detail.get("bist_pddd", None)
+                    ))
 
-        else:
-            print(sector["title"])
-            print(result[1])
+                else:
+                    print(f"{sector['title']} Başlıklı Sektörün bilgileri çekilemedi")
 
-        print("")
+            clear_screen()
+            conn.commit()
+            conn.close()
 
-    conn.commit()
-    conn.close()
+        elif status == 2:
+            if config["all_cmp"]:
+                pass
 
 if __name__ == "__main__":
     main()
