@@ -60,19 +60,46 @@ def main():
         print("Config Okunamadı ...")
         time.sleep(5)
         sys.exit(0)
-    
     config = result[1]
 
     setup_database()
 
-    result = Login("", "")
+    result = Login(config["username"], config["password"])
     if not result[0]:
-        print(result[1])
+        print("Giriş Yapılamadı ...")
+        time.sleep(5)
         sys.exit(0)
     login_data = result[1]
 
-    print(login_data)
+    print(f"{config['username']} Hesaba Giriş Yapıldı")
 
+    while True:
+        while True:
+            choice = input("1 - Sektörleri Çek\n2 - Hisseleri Çek\n3 - Programı Sonlandır\nSeçimin : ")
+            if choice.isnumeric():
+                choice = int(choice)
+                if choice == 3:
+                    print("Program Kaptılıyor...")
+                    time.sleep(2)
+                    sys.exit(0)
+                elif choice == 1:
+                    status = 1
+                    break
+                elif choice == 2:
+                    ststuas = 2
+                    break
+                else:
+                    print("Lütfen Doğru Bir Seçim Yapınız ...")
+                time.sleep(0.5)
+                continue
+            else:
+                print("Lütfen Doğru Bir Seçim Yapınız ...")
+                time.sleep(0.5)
+                continue
+        
+        print(f"Seçiminiz : {status}")
+
+        
     result = GetSectors(login_data["access"])
     if not result[0]:
         print(result[1])
