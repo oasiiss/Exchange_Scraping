@@ -12,7 +12,7 @@ def GetAllCompany(token):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0'
         }
 
-        conn.request("GET", "/son-bilancolar", headers=headers)
+        conn.request("GET", "/radar", headers=headers)
         res = conn.getresponse()
         data = res.read()
         
@@ -71,7 +71,7 @@ def GetRatioAnalysis(company_name, token):
         response = connection.getresponse()
     except Exception as e:
         connection.close()
-        return [False, f"Bağlantı hatası: {e}"]
+        return [False, None]
 
     if response.status == 200:
         try:
@@ -81,7 +81,7 @@ def GetRatioAnalysis(company_name, token):
             tables = soup.find_all("table", class_="w-full")
             if len(tables) < 2:
                 connection.close()
-                return [False, "Beklenen tablo bulunamadı."]
+                return [False, None]
 
             table = tables[1]
             tbody = table.find_all("tbody")[-1]
@@ -89,7 +89,7 @@ def GetRatioAnalysis(company_name, token):
             favok_div = tbody.find('div', string='FAVÖK Marjı')
             if not favok_div:
                 connection.close()
-                return [False, "'FAVÖK Marjı' verisi bulunamadı."]
+                return [False, None]
 
             favok_marj_raw = favok_div.find_next('td').text.strip()
             favok_marj_value = favok_marj_raw.split('%')[-1].strip()
@@ -99,10 +99,10 @@ def GetRatioAnalysis(company_name, token):
 
         except Exception as e:
             connection.close()
-            return [False, f"Veri işleme hatası: {e}"]
+            return [False, None]
     else:
         connection.close()
-        return [False, f"İstek başarısız. Durum Kodu: {response.status}"]
+        return [False, None]
     
 def GetCompanyInfo(company_name, token):
     try:
@@ -132,14 +132,16 @@ def GetCompanyInfo(company_name, token):
                 if total_row:
                     total_row = total_row.parent
                     sermaye_pay = total_row.find_all('td')[1].text.strip()
-
-            return [True, sermaye_pay]
+                    return [True, sermaye_pay]
+                else:
+                    return [False, None]
+            else:
+                return [False, None]
         else:
-            return [False, f"Senet Sayısı Çekilemed - İstek başarısız. Durum Kodu: {response.status}"]
+            return [False, None]
 
-        connection.close()
     except Exception as err:
-        return [False, f"Senet Sayısı Çekilemedi : {err}"]
+        return [False, None]
     
 def GetCompanyDetail(company_name, token):
     try:
@@ -165,11 +167,11 @@ def GetCompanyDetail(company_name, token):
         if response.status == 308:
             new_path = response.getheader('Location')
             if new_path:
-                print(f"Yönlendirilen URL: {new_path}")
-                hisse_adi = new_path
+                hisse_adi = new_path.split("/")[2]
                 connection, response = make_request(host, new_path, token)
         else:
             hisse_adi = company_name
+
         response_data["hisse_adi"] = hisse_adi
         if response.status == 200:
             data = response.read().decode("utf-8")
@@ -199,9 +201,11 @@ def GetCompanyDetail(company_name, token):
                             elif "net borç" in title:
                                 response_data["net_borc"] = value
                         except Exception as err:
-                            print(f"Bir çarpan verisi atlandı.{err}")
+                            pass
+                            # print(f"Bir çarpan verisi atlandı.{err}")
                 except:
-                    print("Çarpanlar verisi çekilemedi")
+                    pass
+                    # print("Çarpanlar verisi çekilemedi")
             else:
                 return [False, "Çarpanlar tablosu bulunamadı"]
 
@@ -244,9 +248,11 @@ def GetCompanyDetail(company_name, token):
                                 response_data["piyasa_degeri"] = value
 
                         except:
-                            print(f"Bir şirket detayı atlandı.")
+                            pass
+                            # print(f"Bir şirket detayı atlandı.")
                 except Exception as e:
-                    print(f"Şirket detayları verisi çekilemedi: {e}")
+                    pass
+                    # print(f"Şirket detayları verisi çekilemedi: {e}")
             else:
                 return [False, "Şirket detayları tablosu bulunamadı"]
 
@@ -288,9 +294,11 @@ def GetCompanyDetail(company_name, token):
                                 response_data["net_dönem_kari"] = value
             
                         except:
-                            print(f"Bir gelir tablosu satırı atlandı.")
+                            pass
+                            # print(f"Bir gelir tablosu satırı atlandı.")
                 except Exception as e:
-                    print(f"Gelir tablosu verisi çekilemedi: {e}")
+                    pass
+                    # print(f"Gelir tablosu verisi çekilemedi: {e}")
             else:
                 return [False, "Gelir tablosu bulunamadı"]
             
@@ -325,10 +333,12 @@ def GetCompanyDetail(company_name, token):
                                 response_data["öz_kaynaklar"] = value
                                 break
                         except:
-                            print(f"Bir bilanço satırı atlandı.")
+                            pass
+                            # print(f"Bir bilanço satırı atlandı.")
 
                 except Exception as e:
-                    print(f"Bilanço verisi çekilemedi: {e}")
+                    pass
+                    # print(f"Bilanço verisi çekilemedi: {e}")
             else:
                 return [False, "Bilanço tablosu bulunamadı"]
             
@@ -337,8 +347,7 @@ def GetCompanyDetail(company_name, token):
         else:
             error_data = response.read().decode("utf-8")
             return [False, f"İstek başarısız. Durum Kodu: {response.status}\nSunucudan dönen hata mesajı: {error_data}"]
-
-        connection.close()
+        
     except Exception as err:
         return [False, err]
 
@@ -357,7 +366,7 @@ def GetFDSell(company_name):
         connection.request("GET", path, headers=headers)
         response = connection.getresponse()
     except Exception as e:
-        return [False, f"Bağlantı hatası: {e}"]
+        return [False, [None, None]]
 
     if response.status == 200:
         try:
@@ -371,14 +380,14 @@ def GetFDSell(company_name):
             tab_items = soup.find_all("div", class_="tab-item")
             if not tab_items or len(tab_items) < 7:
                 connection.close()
-                return [False, "Beklenen 'tab-item' elemanı bulunamadı veya yeterli değil."]
+                return [False, [None, None]]
 
             first_tab_item = tab_items[6]
 
             table = first_tab_item.find("table", class_="excelexport")
             if not table:
                 connection.close()
-                return [False, "Tablo bulunamadı."]
+                return [False, [None, None]]
 
             tbody = table.find('tbody')
             row = tbody.find('tr')
@@ -391,25 +400,24 @@ def GetFDSell(company_name):
 
             except IndexError:
                 connection.close()
-                return [False, "Tabloda beklenen sütunlar bulunamadı."]
+                return [False, [None, None]]
 
         except Exception as e:
             connection.close()
-            return [False, f"Veri işleme hatası: {e}"]
+            return [False, [None, None]]
         
     else:
         connection.close()
-        return [False, f"İstek başarısız! Durum Kodu: {response.status}"]
+        return [False, [None, None]]
     
-def get_bilanco_donemi_from_string(value):
+def BilancoSplit(value):
     parts = value.split('/')
     
     if len(parts) != 2:
         raise ValueError(f"Geçersiz format: {value}")
-    
+
     first = int(parts[0])
     second = int(parts[1])
-    
     if first > 12:
         year = first
         month_or_quarter = second
@@ -419,49 +427,15 @@ def get_bilanco_donemi_from_string(value):
     
     return year, month_or_quarter
 
-def compare_bilanco_donemi_strings(a, b):
-    year_a, period_a = get_bilanco_donemi_from_string(a)
-    year_b, period_b = get_bilanco_donemi_from_string(b)
-
-    return year_a == year_b and period_a == period_b
-
-
-
-
-# result = GetAllCompany(data["access"])
-# if not result[0]:
-#     print("HATAAAA")
-#     print(result[1])
-# else:
-#     for cmp in result[1]:
-#         result = GetCompanyDetail(cmp["code"], data["access"])
-#         if not result[0]:
-#             print(f"{cmp['code']} Kodlu Şirketin Bilgileri Çekilemedi Sıradaki Şirkete geçiliyor...")
-#             continue
-#         cmp_detail_data = result[1]
-#         result = GetCompanyInfo(cmp_detail_data["hisse_adi"], data["access"])
-#         if not result[0]:
-#             cmp_detail_data["senet_sayisi"] = None
-#         cmp_detail_data["senet_sayisi"] = result[1]
-#         result = GetRatioAnalysis(cmp_detail_data["hisse_adi"], data["access"])
-#         if not result[0]:
-#             cmp_detail_data["favök_marjı"] = None
-#         cmp_detail_data["favök_marjı"] = result[1]
-#         result = GetFDSell(cmp_detail_data["hisse_adi"])
-#         if not result[0]:
-#             cmp_detail_data["fd_satislar"] = None
-#             cmp_detail_data["son_donem"] = None
-
-#         cmp_detail_data["fd_satislar"] = result[1][0]
-#         cmp_detail_data["son_donem"] = result[1][1]
+def CompareBilanco(a, b):
+    try:
+        if a is None or b is None:
+            return False
         
-#         if not compare_bilanco_donemi_strings(cmp_detail_data["date"], cmp_detail_data["son_donem"]):
-#             print(cmp_detail_data["hisse_adi"])
-#             print(cmp_detail_data["date"])
-#             print(cmp_detail_data["son_donem"])
-#             print("Bilanço dönemleri uyuşmuyor...")
+        year_a, period_a = BilancoSplit(a)
+        year_b, period_b = BilancoSplit(b)
 
-#         print(cmp_detail_data)
-#         print(f"\n---------------------------------------------------------\n")
-
+        return year_a == year_b and period_a == period_b
+    except:
+        return False
 

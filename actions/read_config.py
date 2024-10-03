@@ -26,7 +26,7 @@ def ReadFile(filename):
     try:
         with open(filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
-            lines = [line.strip() for line in lines]
+            lines = [line.strip() for line in lines if len(line.strip()) > 0]
         return lines
     except FileNotFoundError:
         print(f"{filename} bulunamadı.")
