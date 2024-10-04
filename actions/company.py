@@ -286,7 +286,7 @@ def GetCompanyDetail(company_name, token):
 
                             if "satışlar" in title:
                                 response_data["satislar"] = value
-                            elif "esas" in title:
+                            elif "faaliyet" in title:
                                 response_data["esas_faaliyet_kari"] = value
                             elif "favök" in title:
                                 response_data["favök"] = value

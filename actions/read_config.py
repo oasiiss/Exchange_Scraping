@@ -7,15 +7,9 @@ def ReadConfig():
         
         username = config.get("username")
         password = config.get("password")
-        all_cmp = config.get("all_cmp")
-
-        if not all_cmp:
-            companies = ReadFile("./settings/sirketler.txt")
-        else:
-            companies = []
         
         if len(username) > 0 and len(password) > 0:
-            return [True, {"username" : username, "password" : password, "all_cmp" : all_cmp, "companies" : companies}]
+            return [True, {"username" : username, "password" : password}]
         else:
             return [False, "Config Dosyasında Boş Ayarlar var"]
     except Exception as err:

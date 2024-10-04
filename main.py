@@ -31,6 +31,7 @@ def setup_database():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS '2024_hisseler' (
         HISSE_ADI TEXT UNIQUE,
+        DONEM TEXT,
         SEKTOR_ADI TEXT,
         SON_FIYAT REAL,
         ESAS_FAAL_KARI REAL,
@@ -63,6 +64,29 @@ def clear_table(table_name):
     conn.commit()
     conn.close()
 
+def process_financial_data(cmp_data):
+    keys = ["esas_faaliyet_kari", "satislar", "favök", "net_dönem_kari", "öz_kaynaklar"]
+
+    for key in cmp_data:
+        if key in keys:
+            value = cmp_data.get(key)
+            
+            if value is None:
+                continue
+            else:
+                value = str(value)
+                value2 = value.replace(".", "")
+                value2 = value.replace(",", "")
+
+                try:
+                    float(value2)
+                    cmp_data[key] = f"{value}.000"
+                except:
+                    continue
+
+    return cmp_data
+
+
 def main():
     result = ReadConfig()
     if not result[0]:
@@ -83,12 +107,11 @@ def main():
     print(f"{config['username']} Hesaba Giriş Yapıldı")
 
     while True:
-        clear_screen()
         while True:
-            choice = input("\n1 - Sektörleri Çek\n2 - Hisseleri Çek\n3 - Programı Sonlandır\n\nSeçimin : ")
+            choice = input("\n1 - Sektör Oku\n2 - Şirket Oku\n3 - Okunamıyanları Oku\n4 - Programı Sonlandır\n\nSeçimin : ")
             if choice.isnumeric():
                 choice = int(choice)
-                if choice == 3:
+                if choice == 4:
                     print("Program Kaptılıyor...")
                     time.sleep(1)
                     sys.exit(0)
@@ -97,6 +120,9 @@ def main():
                     break
                 elif choice == 2:
                     status = 2
+                    break
+                elif choice == 3:
+                    status = 3
                     break
                 else:
                     print("Lütfen Doğru Bir Seçim Yapınız ...")
@@ -147,27 +173,50 @@ def main():
             clear_screen()
             conn.close()
 
-        elif status == 2:
+        elif status == 2 or status == 3:
+            if status == 2:
+                while True:
+                    choiceee = input("\n1 - Tüm Şirketler\n2 - Listelenen Şirketler\n\nSeçimin : ")
+                    if choiceee.isnumeric():
+                        choiceee = int(choiceee)
+                        if choiceee == 1 or choiceee == 2:
+                            break
+                        else:
+                            print("Lütfen Doğru Bir Seçim Yapınız.xxx")
+                            continue
+
+                    else:
+                        print("Lütfen Doğru Bir Seçim Yapınız.")
+                        continue
+
+                if choiceee == 1:
+                    result = GetAllCompany(login_data["access"])
+                    if not result[0]:
+                        print("Şirket İsimleri Çekilemedi Tekrar Deneyiniz.")
+                        time.sleep(0.5)
+                        continue
+
+                    companies = result[1]
+                    companies_code = [company['code'] for company in companies]
+                    WriteListToFile("././settings/sirketler.txt", companies_code)
+                elif choiceee == 2:
+                    companies = ReadFile("././settings/sirketler.txt")
+                    companies = [{"code" : cmp} for cmp in companies]
+                    if not len(companies) > 0:
+                        print("sirketler.txt Dosyasının İçeriği Boş")
+                        time.sleep(1)
+                        continue
+            else:
+                cmpies = ReadFile("././settings/okunamayan_sirketler.txt")
+                if not len(cmpies) > 0:
+                    print("Okunamayan Şirket Bulunamadı.")
+                    continue
+                else:
+                    companies = [{"code" : company} for company in cmpies]
+
             WriteListToFile("././settings/okunan_sirketler.txt", [])
             WriteListToFile("././settings/okunamayan_sirketler.txt", [])
             WriteListToFile("./bilgi.txt", [])
-            if config["all_cmp"]:
-                result = GetAllCompany(login_data["access"])
-                if not result[0]:
-                    print("Şirket İsimleri Çekilemedi Tekrar Deneyiniz.")
-                    time.sleep(0.5)
-                    continue
-
-                companies = result[1]
-                companies_code = [company['code'] for company in companies]
-                WriteListToFile("././settings/sirketler.txt", companies_code)
-            else:
-                companies = ReadFile("././settings/sirketler.txt")
-                companies = [{"code" : cmp} for cmp in companies]
-                if not len(companies) > 0:
-                    print("sirketler.txt Dosyasnın İçeriği Boş")
-                    time.sleep(1)
-                    continue
 
             print(f"\n{len(companies)} Adet Şirket Bulundu.\n")
 
@@ -175,44 +224,67 @@ def main():
             cursor = conn.cursor()
 
             for company in tqdm(companies, desc="Şirket Detayları Çekiliyor", unit="Şirket"):
-                result = GetCompanyDetail(company["code"], login_data["access"])
-                if not result[0]:
-                    clear_screen()
+                cmp_data = None
+
+                for i in range(3):
+                    result = GetCompanyDetail(company["code"], login_data["access"])
+                    if not result[0]:
+                        time.sleep(1)
+                        continue
+                    else:
+                        cmp_data = result[1]
+                        break
+
+                if cmp_data is None:
                     AppendText("././settings/okunamayan_sirketler.txt", company["code"])
-                    cmp_data = None
                     time.sleep(0.3)
                     continue
-                cmp_data = result[1]
 
-                result = GetCompanyInfo(cmp_data["hisse_adi"], login_data["access"])
-                if not result[0]:
-                    cmp_data["senet_sayisi"] = None
-                cmp_data["senet_sayisi"] = result[1]
+                for i in range(3):
+                    result = GetCompanyInfo(cmp_data["hisse_adi"], login_data["access"])
+                    if not result[0]:
+                        time.sleep(1)
+                        cmp_data["senet_sayisi"] = None
+                        continue
+                    else:
+                        cmp_data["senet_sayisi"] = result[1]
+                        break
 
-                result = GetRatioAnalysis(cmp_data["hisse_adi"], login_data["access"])
-                if not result[0]:
-                    cmp_data["favök_marjı"] = None
-                cmp_data["favök_marjı"] = result[1]
+                for i in range(3):
+                    result = GetRatioAnalysis(cmp_data["hisse_adi"], login_data["access"])
+                    if not result[0]:
+                        time.sleep(1)
+                        cmp_data["favök_marjı"] = None
+                        continue
+                    else:
+                        cmp_data["favök_marjı"] = result[1]
+                        break
 
-                result = GetFDSell(cmp_data["hisse_adi"])
-                if not result[0]:
-                    cmp_data["fd_satislar"] = None
-                    cmp_data["son_donem"] = None
+                for i in range(3):
+                    result = GetFDSell(cmp_data["hisse_adi"])
+                    if not result[0]:
+                        time.sleep(1)
+                        cmp_data["fd_satislar"] = None
+                        cmp_data["son_donem"] = None
+                        continue
+                    else:
+                        cmp_data["fd_satislar"] = result[1][0]
+                        cmp_data["son_donem"] = result[1][1]
+                        break
 
-                cmp_data["fd_satislar"] = result[1][0]
-                cmp_data["son_donem"] = result[1][1]
-
+                cmp_data = process_financial_data(cmp_data)
                 if not CompareBilanco(cmp_data["date"], cmp_data["son_donem"]):
                     AppendText("./bilgi.txt", f"{cmp_data['hisse_adi']} Kodlu Şirket İçin Dönem Farkı Var fintables : {cmp_data['date']} - İş Yatırım : {cmp_data['son_donem']}")
 
                 cursor.execute("""
                     INSERT OR REPLACE INTO '2024_hisseler' 
-                    (HISSE_ADI, SEKTOR_ADI, SON_FIYAT, ESAS_FAAL_KARI, SATISLAR, FAVOK, FAVOK_MARJI, FD_SATIS, FD_FAVOK, FK, PD_DD, PIYASA_DEGERI, NET_KAR, ODENMIS_SERMAYE, OZKAYNAKLAR, FIIL_DOL_ORANI, SENET_SAYISI, PEG, NETBORC_FAVOK, HBK) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (HISSE_ADI, DONEM, SEKTOR_ADI, SON_FIYAT, ESAS_FAAL_KARI, SATISLAR, FAVOK, FAVOK_MARJI, FD_SATIS, FD_FAVOK, FK, PD_DD, PIYASA_DEGERI, NET_KAR, ODENMIS_SERMAYE, OZKAYNAKLAR, FIIL_DOL_ORANI, SENET_SAYISI, PEG, NETBORC_FAVOK, HBK) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     cmp_data["hisse_adi"],
+                    cmp_data["date"],
                     cmp_data["sektör"],
-                    "122",
+                    None,
                     cmp_data["esas_faaliyet_kari"],
                     cmp_data["satislar"],
                     cmp_data["favök"],
@@ -234,8 +306,23 @@ def main():
                 conn.commit()
                 AppendText("././settings/okunan_sirketler.txt", cmp_data["hisse_adi"])
                 cmp_data = None
-            clear_screen()
+
+            cmpiess = ReadFile("././settings/okunamayan_sirketler.txt")
+            infoo = ReadFile("./bilgi.txt")
+
+            if len(cmpiess) > 0:
+                print(f"\nOkunamayan Şirketler ;")
+                for i in cmpiess:
+                    print(i)
+
+            if len(infoo) > 0:
+                print("\nDönem Farkı Olanlar ;\n")
+                for i in infoo:
+                    print(i)
+
             conn.close()
+            continue
+            
 
 
 if __name__ == "__main__":
