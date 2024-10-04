@@ -229,10 +229,11 @@ def GetCompanyDetail(company_name, token):
                                 if sector_div:
                                     sector_elements = sector_div.find_all('a')
                                     if sector_elements:
+                                        # İlk sektörü al ve yanına ' - ' eklemeden ekle
                                         sectors = [sector.get_text(strip=True) for sector in sector_elements]
-                                        response_data["sektör"] = ' - '.join(sectors)
-                                    else:
-                                        pass
+                                        if sectors:
+                                            response_data["sektör"] = sectors[0]  # Sadece ilk sektörü al
+                                            break  # İlk sektörü aldıktan sonra döngüden çık
                                 else:
                                     pass
 
@@ -249,12 +250,15 @@ def GetCompanyDetail(company_name, token):
                                 value = row.find_all('td')[1].text.strip()
                                 response_data["piyasa_degeri"] = value
 
-                        except:
+                        except Exception as e:
+                            # Bir şirket detayı atlandı
+                            # print(f"Bir şirket detayı atlandı: {e}")
                             pass
-                            # print(f"Bir şirket detayı atlandı.")
+
                 except Exception as e:
-                    pass
+                    # Şirket detayları verisi çekilemedi
                     # print(f"Şirket detayları verisi çekilemedi: {e}")
+                    pass
             else:
                 return [False, "Şirket detayları tablosu bulunamadı"]
 

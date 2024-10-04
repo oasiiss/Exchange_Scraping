@@ -109,7 +109,7 @@ def CompletSektor(value, sectors):
         return value
     if "..." in value and len(sectors) > 0:
         for sector in sectors:
-            if sector[:10] == value[:10]:
+            if str(sector[:10]).lower() == str(value[:10]).lower():
                 value = sector
                 return value
     else:
@@ -146,10 +146,10 @@ def main():
 
     while True:
         while True:
-            choice = input("\n1 - Sektör Oku\n2 - Şirket Oku\n3 - Okunamıyanları Oku\n4 - Programı Sonlandır\n\nSeçimin : ")
+            choice = input("\n1 - Sektör Oku\n2 - Şirket Oku\n3 - Okunamıyanları Oku\n4 - DB'yi Dönüştür\n5 - Programı Sonlandır\n\nSeçimin : ")
             if choice.isnumeric():
                 choice = int(choice)
-                if choice == 4:
+                if choice == 5:
                     print("Program Kaptılıyor...")
                     time.sleep(1)
                     sys.exit(0)
@@ -161,6 +161,9 @@ def main():
                     break
                 elif choice == 3:
                     status = 3
+                    break
+                elif choice == 4:
+                    status = 4
                     break
                 else:
                     print("Lütfen Doğru Bir Seçim Yapınız ...")
@@ -212,6 +215,13 @@ def main():
             conn.close()
 
         elif status == 2 or status == 3:
+            sectors = []
+            for i in range(3):
+                result = ReadTable("data.db", "2024_sektorler")
+                if result[0]:
+                    sectors = result[1]
+                    break
+                
             if status == 2:
                 while True:
                     choiceee = input("\n1 - Tüm Şirketler\n2 - Listelenen Şirketler\n\nSeçimin : ")
@@ -369,7 +379,52 @@ def main():
 
             conn.close()
             continue
+
+        elif status == 4:
+            result = DBToTxt("data.db")
+            if result[0]:
+                print("DB Dönüştürüldü.")
+                continue
+            else:
+                print("DB Dönüştürülemedi.")
+                continue
             
+
+def DBToTxt(db_name):
+    try:
+        folder_name = db_name.split(".")[0]
+        conn = sqlite3.connect(db_name)
+        cursor = conn.cursor()
+
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+
+        for table_name in tables:
+            table_name = table_name[0]
+            query = f'SELECT * FROM "{table_name}"'
+            
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            
+            column_names = [description[0] for description in cursor.description]
+            
+            txt_filename = os.path.join(folder_name, f"{table_name}.txt")
+            with open(txt_filename, mode='w', encoding='utf-8') as file:
+                file.write(";".join(column_names) + "\n")
+                
+                for row in rows:
+                    file.write(";".join(str(value) for value in row) + "\n")
+
+        conn.close()
+
+        return [True]
+    except Exception as err:
+        print(err)
+        return [False]
+
 
 
 if __name__ == "__main__":
