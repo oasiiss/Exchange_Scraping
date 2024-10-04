@@ -2,6 +2,8 @@ import http.client
 import json, re, ast, gzip
 from bs4 import BeautifulSoup
 from io import BytesIO
+from yahooquery import Ticker
+
 
 def GetAllCompany(token):
     try:
@@ -438,4 +440,13 @@ def CompareBilanco(a, b):
         return year_a == year_b and period_a == period_b
     except:
         return False
+    
+
+def GetLastPrice(company_name):
+    try:
+        cmp = Ticker(f'{company_name}.IS')
+        last_price = cmp.price[f'{company_name}.IS']['regularMarketPrice']
+        return [True, last_price]
+    except:
+        return [False, None]
 
