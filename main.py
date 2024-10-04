@@ -2,7 +2,7 @@ import sqlite3
 from actions.auth import Login
 from actions.sector import GetSectors, GetSectorDetail
 from actions.read_config import ReadConfig, AppendText, WriteListToFile, ReadFile
-from actions.company import GetAllCompany, GetCompanyDetail, GetCompanyInfo, GetRatioAnalysis, GetFDSell, CompareBilanco
+from actions.company import GetAllCompany, GetCompanyDetail, GetCompanyInfo, GetRatioAnalysis, GetFDSell, CompareBilanco, GetLastPrice
 import sys, time, os, platform
 from tqdm import tqdm
 
@@ -76,7 +76,7 @@ def process_financial_data(cmp_data):
             else:
                 value = str(value)
                 value2 = value.replace(".", "")
-                value2 = value.replace(",", "")
+                value2 = value2.replace(",", "")
 
                 try:
                     float(value2)
@@ -85,6 +85,37 @@ def process_financial_data(cmp_data):
                     continue
 
     return cmp_data
+
+def ReadTable(db, table):
+    try:
+        db_connection = sqlite3.connect(db)
+        cursor = db_connection.cursor()
+
+        cursor.execute(f"SELECT * FROM [{table}]")
+        rows = cursor.fetchall()
+        db_connection.close()
+
+        if len(rows) > 0:
+            rows = [row[0] for row in rows]
+            return [True, rows]
+        else:
+            return [True, []]
+
+    except sqlite3.Error as e:
+        return [False]
+    
+def CompletSektor(value, sectors):
+    if value is None:
+        return value
+    if "..." in value and len(sectors) > 0:
+        for sector in sectors:
+            if sector[:10] == value[:10]:
+                value = sector
+                return value
+    else:
+        return value
+    
+    return value
 
 
 def main():
@@ -96,6 +127,13 @@ def main():
     config = result[1]
 
     setup_database()
+
+    sectors = []
+    for i in range(3):
+        result = ReadTable("data.db", "2024_sektorler")
+        if result[0]:
+            sectors = result[1]
+            break
 
     result = Login(config["username"], config["password"])
     if not result[0]:
@@ -276,6 +314,15 @@ def main():
                 if not CompareBilanco(cmp_data["date"], cmp_data["son_donem"]):
                     AppendText("./bilgi.txt", f"{cmp_data['hisse_adi']} Kodlu Şirket İçin Dönem Farkı Var fintables : {cmp_data['date']} - İş Yatırım : {cmp_data['son_donem']}")
 
+                last_price = None
+                for i in range(3):
+                    result = GetLastPrice(cmp_data['hisse_adi'])
+                    if result[0]:
+                        last_price = result[1]
+                        break
+
+                sector = CompletSektor(cmp_data["sektör"], sectors)
+        
                 cursor.execute("""
                     INSERT OR REPLACE INTO '2024_hisseler' 
                     (HISSE_ADI, DONEM, SEKTOR_ADI, SON_FIYAT, ESAS_FAAL_KARI, SATISLAR, FAVOK, FAVOK_MARJI, FD_SATIS, FD_FAVOK, FK, PD_DD, PIYASA_DEGERI, NET_KAR, ODENMIS_SERMAYE, OZKAYNAKLAR, FIIL_DOL_ORANI, SENET_SAYISI, PEG, NETBORC_FAVOK, HBK) 
@@ -283,8 +330,8 @@ def main():
                 """, (
                     cmp_data["hisse_adi"],
                     cmp_data["date"],
-                    cmp_data["sektör"],
-                    None,
+                    sector,
+                    last_price,
                     cmp_data["esas_faaliyet_kari"],
                     cmp_data["satislar"],
                     cmp_data["favök"],
