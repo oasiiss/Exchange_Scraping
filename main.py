@@ -80,7 +80,7 @@ def process_financial_data(cmp_data):
 
                 try:
                     float(value2)
-                    cmp_data[key] = f"{value}.000"
+                    cmp_data[key] = f"{value},000"
                 except:
                     continue
 
@@ -96,6 +96,7 @@ def edit_data(cmp_data):
             value = str(value)
             value2 = value.replace(".", "")
             value2 = value2.replace(",", "")
+            value2 = value2.replace("-", "")
 
             if value2.isnumeric():
                 value = value.replace(".", ",")

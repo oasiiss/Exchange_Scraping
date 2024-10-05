@@ -450,6 +450,7 @@ def GetLastPrice(company_name):
     try:
         cmp = Ticker(f'{company_name}.IS')
         last_price = cmp.price[f'{company_name}.IS']['regularMarketPrice']
+        last_price = str(last_price).replace(".", ",")
         return [True, last_price]
     except:
         return [False, None]
