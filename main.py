@@ -192,6 +192,13 @@ def main():
             for sector in tqdm(all_sectors, desc="Sektörler çekiliyor", unit="sektör"):
                 for i in range(2):
                     result = GetSectorDetail(sector["url"], login_data["access"])
+                    try:
+                        title = sector["title"]
+                        title = title.replace("Sektörü", "")
+                        sector["title"] = title
+                    except Exception as err:
+                        pass
+
                     if result[0]:
                         sector_detail = result[1]
                         cursor.execute("""
