@@ -86,6 +86,23 @@ def process_financial_data(cmp_data):
 
     return cmp_data
 
+def edit_data(cmp_data):
+    for key in cmp_data:
+        value = cmp_data.get(key)
+        
+        if value is None:
+            continue
+        else:
+            value = str(value)
+            value2 = value.replace(".", "")
+            value2 = value2.replace(",", "")
+
+            if value2.isnumeric():
+                value = value.replace(".", ",")
+                cmp_data[key] = value
+
+    return cmp_data
+
 def ReadTable(db, table):
     try:
         db_connection = sqlite3.connect(db)
@@ -328,6 +345,7 @@ def main():
                         break
 
                 cmp_data = process_financial_data(cmp_data)
+                cmp_data = edit_data(cmp_data)
                 if not CompareBilanco(cmp_data["date"], cmp_data["son_donem"]):
                     AppendText("./bilgi.txt", f"{cmp_data['hisse_adi']} Kodlu Şirket İçin Dönem Farkı Var fintables : {cmp_data['date']} - İş Yatırım : {cmp_data['son_donem']}")
 
