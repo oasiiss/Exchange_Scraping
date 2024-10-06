@@ -5,11 +5,13 @@ def ReadConfig():
         with open("./settings/config.json", 'r', encoding='utf-8') as f:
             config = json.load(f)
         
-        username = config.get("username")
-        password = config.get("password")
+        ft_username = config.get("ft_username")
+        ft_password = config.get("ft_password")
+        mt_username = config.get("mt_username2")
+        mt_password = config.get("mt_password")
         
-        if len(username) > 0 and len(password) > 0:
-            return [True, {"username" : username, "password" : password}]
+        if len(ft_username) > 0 and len(ft_password) > 0 and len(mt_username) > 0 and len(mt_password) > 0:
+            return [True, {"ft_username" : ft_username, "ft_password" : ft_password, "mt_username" : mt_username, "mt_password" : mt_password}]
         else:
             return [False, "Config Dosyasında Boş Ayarlar var"]
     except Exception as err:

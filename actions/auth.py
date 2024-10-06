@@ -1,7 +1,7 @@
 import http.client
 import json
 
-def Login(username, password):
+def FtLogin(username, password):
     try:
         conn = http.client.HTTPSConnection("api.fintables.com")
 
