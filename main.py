@@ -1,5 +1,5 @@
 import sqlite3
-from actions.auth import FtLogin
+from actions.auth import FtLogin, MtLogin
 from actions.sector import GetSectors, GetSectorDetail
 from actions.read_config import ReadConfig, AppendText, WriteListToFile, ReadFile
 from actions.company import GetAllCompany, GetCompanyDetail, GetCompanyInfo, GetRatioAnalysis, GetFDSell, CompareBilanco, GetLastPrice
@@ -181,7 +181,14 @@ def MainMenu():
             FtMenu(result[1])
 
         elif choice == 2:
-            pass
+            clear_screen()
+            result = MtLogin(config["mt_username"], config["mt_password"])
+            if not result[0]:
+                clear_screen()
+                print(f"\n{config['mt_username']} Mail Adresine Sahip Malitablolar Hesabına Giriş Yapılamadı.")
+                continue
+
+            MtMenu(result[1])
 
 
 
