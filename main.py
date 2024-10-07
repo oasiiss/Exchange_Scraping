@@ -4,7 +4,7 @@ from actions.sector import GetSectors, GetSectorDetail
 from actions.read_config import ReadConfig, AppendText, WriteListToFile, ReadFile
 from actions.company import GetAllCompany, GetCompanyDetail, GetCompanyInfo, GetRatioAnalysis, GetFDSell, CompareBilanco, GetLastPrice
 from actions.mali_tablolar import AllCompany, CompanyDetail
-import sys, time, os, platform
+import sys, time, os, platform, unicodedata
 from tqdm import tqdm
 
 import datetime
@@ -70,9 +70,15 @@ def setup_database():
 
     for i in range(1, 25 + 1):
         sql_query += f"""
-        KURUM{i}_ADI TEXT,
-        KURUM{i}_FIYAT REAL,
-        KURUM{i}_TARIH TEXT,"""
+            KURUM{i}_ADI TEXT,
+            KURUM{i}_FIYAT REAL,
+            KURUM{i}_TARIH TEXT,"""
+
+    sql_query += """
+        ORTALAMA_HEDEF_FIYAT REAL,
+        MAX_FIYAT REAL,
+        MIN_FIYAT REAL
+        """
 
     sql_query = sql_query.rstrip(',') + "\n);"
 
@@ -310,6 +316,10 @@ def MtReadFirms(login_data):
             error_list.append(f"\n{company} Kodlu Şirketin Aracı Kurum Bilgileri Çekilemedi.")
             continue
 
+        ort_fiyat = result[2]
+        max_price = result[3][0]
+        min_price = result[3][1]
+
         column_names = ['HISSE_ADI']
         column_values = [company]
 
@@ -345,10 +355,17 @@ def MtReadFirms(login_data):
 
                     kurum_adi = " ".join(text_lst)
 
-            
-
             column_names += [f'KURUM{i}_ADI', f'KURUM{i}_FIYAT', f'KURUM{i}_TARIH']
             column_values += [kurum_adi, kurum_fiyat, kurum_tarih]
+
+        column_names.append('ORTALAMA_HEDEF_FIYAT')
+        column_values.append(ort_fiyat)
+
+        column_names.append('MAX_FIYAT')
+        column_values.append(max_price)
+
+        column_names.append('MIN_FIYAT')
+        column_values.append(min_price)
 
         sql_query = f"""
         INSERT OR REPLACE INTO '{current_year}_araci_kurum' ({', '.join(column_names)}) 

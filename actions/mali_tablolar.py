@@ -89,6 +89,8 @@ def CompanyDetail(cmp, kur, cookie, token):
                 if len(tarih) <= 1:
                     tarih = None
 
+                if hedef_fiyat is not None:
+                    hedef_fiyat = str(hedef_fiyat).replace(".", ",")
 
                 result = {
                     "kurum_adi": kurum_adi,
@@ -98,12 +100,56 @@ def CompanyDetail(cmp, kur, cookie, token):
 
                 results.append(result)
 
+        
+
         if len(results) == 1:
             if results[0]["hedef_fiyat"] is None:
                 return [False]
 
         if len(results) > 0:
-            return [True, results]
+            sum = 0
+            sum_len = 0
+            ort_fiyat = None
+            min_price, max_price = None, None
+            for firm in results:
+                price = str(firm["hedef_fiyat"])
+                
+                price = price.replace(".", "")
+                price = price.replace(",", ".")
+
+                try:
+                    prc = float(price)
+                    sum += prc
+                    sum_len += 1
+
+                    if min_price is None or prc < min_price:
+                        min_price = prc
+                    if max_price is None or prc > max_price:
+                        max_price = prc
+
+                except ValueError:
+                    pass
+
+            if sum_len > 0:
+                ort_fiyat = sum / sum_len
+
+                ort_fiyat = round(ort_fiyat, 2)
+                min_price = round(min_price, 2)
+                max_price = round(max_price, 2)
+
+            if ort_fiyat is not None:
+                ort_fiyat = str(ort_fiyat)
+                ort_fiyat = ort_fiyat.replace(".", ",")
+
+            if max_price is not None:
+                max_price = str(max_price)
+                max_price = max_price.replace(".", ",")
+
+            if min_price is not None:
+                min_price = str(min_price)
+                min_price = min_price.replace(".", ",")
+
+            return [True, results, ort_fiyat, [max_price, min_price]]
         else:
             return [False]
     else:
