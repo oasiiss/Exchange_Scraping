@@ -83,7 +83,7 @@ def GetSectorDetail(sektor_slug, token):
                             bist_100_fk = columns[1].text.strip() if len(columns) > 1 else None
                             bist_100_pddd = columns[2].text.strip() if len(columns) > 2 else None
 
-                        if title == "Medyan":
+                        if title == "Ağırlıklı Ortalama":
                             medyan_fk = columns[1].text.strip() if len(columns) > 1 else None
                             medyan_pddd = columns[2].text.strip() if len(columns) > 2 else None
                             medyan_fd_favok = columns[3].text.strip() if len(columns) > 3 else None

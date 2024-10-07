@@ -7,7 +7,7 @@ def ReadConfig():
         
         ft_username = config.get("ft_username")
         ft_password = config.get("ft_password")
-        mt_username = config.get("mt_username2")
+        mt_username = config.get("mt_username")
         mt_password = config.get("mt_password")
         
         if len(ft_username) > 0 and len(ft_password) > 0 and len(mt_username) > 0 and len(mt_password) > 0:

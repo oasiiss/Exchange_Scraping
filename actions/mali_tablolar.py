@@ -80,6 +80,16 @@ def CompanyDetail(cmp, kur, cookie, token):
                 hedef_fiyat = cols[6].text.strip()
                 tarih = cols[7].text.strip()
 
+                if len(kurum_adi) <= 1:
+                    kurum_adi = None
+
+                if len(hedef_fiyat) <= 1:
+                    hedef_fiyat = None
+
+                if len(tarih) <= 1:
+                    tarih = None
+
+
                 result = {
                     "kurum_adi": kurum_adi,
                     "hedef_fiyat": hedef_fiyat,
@@ -87,6 +97,10 @@ def CompanyDetail(cmp, kur, cookie, token):
                 }
 
                 results.append(result)
+
+        if len(results) == 1:
+            if results[0]["hedef_fiyat"] is None:
+                return [False]
 
         if len(results) > 0:
             return [True, results]

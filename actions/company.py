@@ -229,11 +229,12 @@ def GetCompanyDetail(company_name, token):
                                 if sector_div:
                                     sector_elements = sector_div.find_all('a')
                                     if sector_elements:
-                                        # İlk sektörü al ve yanına ' - ' eklemeden ekle
-                                        sectors = [sector.get_text(strip=True) for sector in sector_elements]
-                                        if sectors:
-                                            response_data["sektör"] = sectors[0]  # Sadece ilk sektörü al
-                                            break  # İlk sektörü aldıktan sonra döngüden çık
+                                        sectors = [sector.get_text(strip=True) for sector in sector_elements[:4]]  # İlk 4 sektörü al
+                                        while len(sectors) < 4:
+                                            sectors.append(None)
+                                            
+                                        response_data["sektör"] = sectors
+                                        break
                                 else:
                                     pass
 
