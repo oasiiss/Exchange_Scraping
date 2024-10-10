@@ -136,15 +136,15 @@ def CompanyDetail(cmp, kur, cookie, token):
 
             if ort_fiyat is not None:
                 ort_fiyat = str(ort_fiyat)
-                ort_fiyat = ort_fiyat.replace(".", ",")
+                ort_fiyat = ort_fiyat.replace(".", "")
 
             if max_price is not None:
                 max_price = str(max_price)
-                max_price = max_price.replace(".", ",")
+                max_price = max_price.replace(".", "")
 
             if min_price is not None:
                 min_price = str(min_price)
-                min_price = min_price.replace(".", ",")
+                min_price = min_price.replace(".", "")
 
             for result in results:
                 price = str(result["hedef_fiyat"]).strip()
