@@ -376,8 +376,6 @@ def MtReadFirms(login_data):
                     kurum_adi = " ".join(text_lst) 
 
                 kurum_adi = TrToEn(kurum_adi)
-                print(kurum_adi)
-
 
             column_names += [f'KURUM{i}_ADI', f'KURUM{i}_FIYAT', f'KURUM{i}_TARIH']
             column_values += [kurum_adi, kurum_fiyat, kurum_tarih]

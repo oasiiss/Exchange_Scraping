@@ -147,7 +147,7 @@ def CompanyDetail(cmp, kur, cookie, token):
                 min_price = min_price.replace(".", ",")
 
             for result in results:
-                price = str(firm["hedef_fiyat"]).strip()
+                price = str(result["hedef_fiyat"]).strip()
                 price = price.replace(".", ",")
                 result["hedef_fiyat"] = price
 
