@@ -89,9 +89,6 @@ def CompanyDetail(cmp, kur, cookie, token):
                 if len(tarih) <= 1:
                     tarih = None
 
-                if hedef_fiyat is not None:
-                    hedef_fiyat = str(hedef_fiyat).replace(".", ",")
-
                 result = {
                     "kurum_adi": kurum_adi,
                     "hedef_fiyat": hedef_fiyat,
@@ -112,7 +109,7 @@ def CompanyDetail(cmp, kur, cookie, token):
             ort_fiyat = None
             min_price, max_price = None, None
             for firm in results:
-                price = str(firm["hedef_fiyat"])
+                price = str(firm["hedef_fiyat"]).strip()
                 
                 price = price.replace(".", "")
                 price = price.replace(",", ".")
@@ -133,9 +130,9 @@ def CompanyDetail(cmp, kur, cookie, token):
             if sum_len > 0:
                 ort_fiyat = sum / sum_len
 
-                ort_fiyat = round(ort_fiyat, 2)
-                min_price = round(min_price, 2)
-                max_price = round(max_price, 2)
+                ort_fiyat = f"{ort_fiyat:,.2f}".replace(".", "X").replace(",", ".").replace("X", ",")
+                min_price = f"{min_price:,.2f}".replace(".", "X").replace(",", ".").replace("X", ",")
+                max_price = f"{max_price:,.2f}".replace(".", "X").replace(",", ".").replace("X", ",")
 
             if ort_fiyat is not None:
                 ort_fiyat = str(ort_fiyat)
@@ -148,6 +145,11 @@ def CompanyDetail(cmp, kur, cookie, token):
             if min_price is not None:
                 min_price = str(min_price)
                 min_price = min_price.replace(".", ",")
+
+            for result in results:
+                price = str(firm["hedef_fiyat"]).strip()
+                price = price.replace(".", ",")
+                result["hedef_fiyat"] = price
 
             return [True, results, ort_fiyat, [max_price, min_price]]
         else:

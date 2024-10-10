@@ -8,6 +8,27 @@ import sys, time, os, platform, unicodedata
 from tqdm import tqdm
 
 import datetime
+def TrToEn(s):
+    dictt = {
+        "İ": "I",
+        "ı": "i",
+        "Ü": "U",
+        "ü": "u",
+        "Ö": "O",
+        "ö": "o",
+        "Ç": "C",
+        "ç": "c",
+        "Ş": "S",
+        "ş": "s",
+        "Ğ": "G",
+        "ğ": "g",
+    }
+
+    for key in dictt.keys():
+        s = s.replace(key, dictt[key])
+
+    return s
+
 
 def get_current_year():
     return datetime.datetime.now().year
@@ -347,13 +368,16 @@ def MtReadFirms(login_data):
 
                 kurum_adi = kurum_adi.capitalize()
 
-
                 if " " in kurum_adi:
                     text_lst = []
                     for krm in kurum_adi.split(" "):
                         text_lst.append(krm.capitalize())
 
-                    kurum_adi = " ".join(text_lst)
+                    kurum_adi = " ".join(text_lst) 
+
+                kurum_adi = TrToEn(kurum_adi)
+                print(kurum_adi)
+
 
             column_names += [f'KURUM{i}_ADI', f'KURUM{i}_FIYAT', f'KURUM{i}_TARIH']
             column_values += [kurum_adi, kurum_fiyat, kurum_tarih]
